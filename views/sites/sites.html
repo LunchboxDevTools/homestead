@@ -1,0 +1,60 @@
+<div id="homestead-sites">
+  <h1 class="page-header">Sites <a href="#" class="add-site" style="float: right;"><i class="fa fa-plus-circle"></i></a></h1>
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Database</th>
+        <th class="homestead_sites_icons">Actions</th>
+        <th class="homestead_sites_icons">Edit</th>
+      </tr>
+    </thead>
+    <tbody id="homestead-sites-list">
+    </tbody>
+  </table>
+
+  <div id="add-site-template" class="hide">
+    <div class="row">   
+      <div class="col-md-12">  
+        <form class="form-horizontal">  
+          <div class="form-group">  
+            <label class="col-md-3 control-label" for="name">Project name</label>  
+            <div class="col-md-9">  
+              <input name="name" type="text" placeholder="" class="form-control input-md">  
+            </div>  
+          </div>
+
+          <div class="form-group">  
+            <label class="col-md-3 control-label" for="git_url">Git URL</label>  
+            <div class="col-md-9">  
+              <input name="git_url" type="text" placeholder="" class="form-control input-md">  
+            </div>  
+          </div>  
+
+          <div class="form-group">  
+            <label class="col-md-3 control-label" for="awesomeness">Composer</label>  
+            <div class="col-md-4">
+              <div class="radio">
+                <label for="composer">  
+                  <input type="radio" name="composer" value="false" checked="checked"> No
+                </label>  
+              </div>
+              <div class="radio">
+                <label for="composer">  
+                  <input type="radio" name="composer" value="true"> Yes
+                </label>  
+              </div>  
+            </div>
+          </div> 
+
+          <div class="form-group">  
+            <label class="col-md-3 control-label" for="webroot">Webroot </label>  
+            <div class="col-md-9">  
+              <input name="webroot" type="text" placeholder="" class="form-control input-md">  
+            </div>  
+          </div>  
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

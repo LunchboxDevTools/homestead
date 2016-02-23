@@ -1,0 +1,38 @@
+nav .homestead-status {
+  background: #e5f2fe;
+  color: #666;
+  font-size: 0.8em;
+  font-weight: normal;
+  margin-left: 5px;
+  padding: 3px 5px;
+  text-transform: uppercase;
+}
+#menu_homestead_dashboard a {
+  padding-top: 25px;
+  padding-bottom: 23px;
+  border-bottom: 1px solid #eee;
+  height: 90px;
+}
+#menu_homestead_dashboard > a > i.fa-homestead {
+  margin-right: 20px;
+  top: -10px;
+  position: relative;
+}
+.homesteadHeaderStatus {
+  font-size: .9em;
+  opacity: .6;
+  display: block;
+}
+.homestead_sites_icons {
+  text-align: right;
+}
+.homestead_sites_icons a {
+  margin-left: 10px;
+}
+#homesteadReset {
+  margin-top: 10px;
+  text-align: center;
+}
+.homestead-tool-button {
+  float: right;
+}

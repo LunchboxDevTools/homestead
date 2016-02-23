@@ -1,0 +1,95 @@
+<!-- SETTINGS VIEW -->
+<div id="homestead-settings">
+  <h1 class="page-header">Settings</h1>
+    <form>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">VM Settings</h3>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label for="vagrant_ip">Virtual machine IP address</label>
+            <input class="form-control" name="vagrant_ip" placeholder="192.168.1.88">
+          </div>
+          <div class="form-group">
+            <label for="vagrant_hostname">Default hostname</label>
+            <input class="form-control" name="vagrant_hostname" placeholder="homestead.dev">
+          </div>
+          <div class="form-group">
+            <label for="vagrant_synced_folders">Local files</label>
+            <input class="form-control" name="vagrant_synced_folders" placeholder="~/Sites/homestead">
+          </div>
+          <div class="form-group">
+            <label for="vagrant_memory">VM memory</label>
+            <div class="input-group">
+            <input class="form-control" name="vagrant_memory" placeholder="1024"><div class="input-group-addon">MBs</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="vagrant_cpus">VM CPUs</label>
+            <input class="form-control" name="vagrant_cpus" placeholder="2">
+          </div>
+          <label>File sync method</label><br>
+          <div class="btn-group" data-toggle="buttons" id="filesync_method">
+            <label class="btn btn-primary active">
+              <input type="radio" name="filesync_method" value="default" autocomplete="off" checked> Default
+            </label>
+            <label class="btn btn-primary">
+              <input type="radio" name="filesync_method" value="rsync" autocomplete="off"> Rsync
+            </label>
+            <label class="btn btn-primary">
+              <input type="radio" name="filesync_method" value="nfs" autocomplete="off"> NFS
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-default" id="installed_extras">
+        <div class="panel-heading">
+          <h3 class="panel-title">Installed Extras</h3>
+        </div>
+
+        <div class="panel-body">
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="adminer"> Adminer</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="mailhog"> MailHog</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="memcached"> Memcached</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="nodejs"> NodeJS</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="pimpmylog"> PimpMyLog</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="ruby"> Ruby</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="selenium"> Selenium</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="solr"> Solr</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="varnish"> Varnish</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="xdebug"> XDebug</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="installed_extras" value="xhprof"> XHProf</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="save_settings">Save</button>
+        <button type="button" class="btn btn-danger" id="reset_settings">Reset</button>
+      </div>
+    </form>
+</div>
+<!-- END SETTINGS VIEW -->
