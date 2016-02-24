@@ -220,6 +220,8 @@ Homestead.prototype.detect = function () {
       }
     }
 
+    var os = require('os');
+    var homedir = os.homedir();
     var boxLog = function(message) {
       $('#homestead_plugin_dialog_log').append(message + '\n');
     };
@@ -251,25 +253,73 @@ Homestead.prototype.detect = function () {
 
         boxLog('Cloned Homestead to ' + clone_path);
         var initHomestead = function() {
-          var initProcess = spawn('bash', [clone_path + '/init.sh']);
-          initProcess.on('exit', function(exit_code) {
-            if (exit_code) {
-              boxLog('Could not initialize Homestead');
-            } else {
-              setupConfigFile();
+          var rimraf = require('rimraf');
+          var startDir = process.cwd();
+          try {
+            // have to change to the new directory to run init script
+            process.chdir(clone_path);
+          } catch (err) {
+            console.log('chdir: ' + err);
+            return;
+          }
+
+          // have to clear out ~/.homestead because init script prompts
+          // to confirm overwrite if the files already exist
+          rimraf(homedir + '/.homestead', function(err) {
+            if (err) {
+              boxLog(err);
+              return;
             }
+
+            // make sure we get the right script
+            var command;
+            var args;
+            if (/^win/.test(os.platform())) {
+              command = 'init.bat';
+              args = [];
+            } else {
+              command = 'bash';
+              args = ['init.sh'];
+            }
+            var initProcess = spawn(command, args);
+            initProcess.on('exit', function(exit_code) {
+              if (exit_code) {
+                boxLog('Could not initialize Homestead');
+              } else {
+                setupConfigFile();
+              }
+
+              try {
+                // change back to the Lunchbox app's directory
+                process.chdir(startDir);
+              } catch (err) {
+                console.log('chdir: ' + err);
+                return;
+              }
+            });
+
+            initProcess.stdout.on('data', function (data) {
+              boxLog('stdout: ' + data);
+            });
+
+            initProcess.stderr.on('data', function (data) {
+              boxLog('stderr: ' + data);
+            });
           });
         };
 
         var setupConfigFile = function() {
-          var configfile = '~/.homestead/Homestead.yaml';
+          var configfile = homedir + '/.homestead/Homestead.yaml';
           boxLog('Setting up config file');
           fs.readFile(configfile, 'utf-8', function(err, data) {
             if (err) {
               boxLog(err);
             } else {
-              var newValue = data.replace('~/Code', window.lunchbox.user_data_path + '/homestead');
-              newValue += '\n\nvagrant_machine_name: homestead';
+              // surround the mapped path with quotes in case of spaces
+              var newValue = data.replace('~/Code', "'" + clone_path + "'");
+
+              // make sure the vm gets named 'homestead' instead of 'default'
+              newValue += '\nvagrant_machine_name: homestead\n';
               fs.writeFile(configfile, newValue, 'utf-8', function(err) {
                 if (err) {
                   boxLog(err);
@@ -325,11 +375,11 @@ Homestead.prototype.detect = function () {
         // make sure the config file is already set up
         var checkConfigFile = function() {
           boxLog('Checking if configuration file exists');
-          fs.lstat('~/.homestead/Homestead.yaml', function(err, stats) {
+          fs.lstat(homedir + '/.homestead/Homestead.yaml', function(err, stats) {
             if (err) {
               boxLog(err);
             } else if (!stats.isFile()) {
-              boxLog('Could not locate configuration file at ~/.homestead');
+              boxLog('Could not locate configuration file at ' + homedir + '/.homestead');
             } else {
               resolveSetup(path);
             }
