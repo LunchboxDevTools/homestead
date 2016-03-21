@@ -209,7 +209,13 @@ Homestead.prototype.detect = function () {
       if (parts.length >= 5 && parts[1] == 'homestead') {
         self.id = parts[0];
         self.name = parts[1];
-        self.home = parts[4];
+
+        // have to get all the parts of the path if it contains spaces
+        self.home = '';
+        for (var i = 4; i < parts.length; i++) {
+          self.home += parts[i] + ' ';
+        }
+        self.home = self.home.trim();
 
         self.state += parts[3] == 'running' ? self._RUNNING : 0;
         self.stateChange();
