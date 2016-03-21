@@ -317,10 +317,47 @@ Homestead.prototype.detect = function () {
             } else {
               // surround the mapped path with quotes in case of spaces
               var newValue = data.replace('~/Code', "'" + clone_path + "'");
-
-              // make sure the vm gets named 'homestead' instead of 'default'
-              newValue += '\nvagrant_machine_name: homestead\n';
               fs.writeFile(configfile, newValue, 'utf-8', function(err) {
+                if (err) {
+                  boxLog(err);
+                } else {
+                  setupVagrantfile();
+                }
+              });
+            }
+          });
+        };
+
+        var setupVagrantfile = function() {
+          var vagrantfile = clone_path + '/Vagrantfile';
+          boxLog('Setting up Vagrantfile');
+          fs.readFile(vagrantfile, 'utf-8', function(err, data) {
+            if (err) {
+              boxLog(err);
+            } else {
+              var lines = data.trim().split('\n');
+              var newValue = '';
+              var i = 0;
+              for (; i < lines.length; i++) {
+                newValue += lines[i] + '\n';
+                if (lines[i].indexOf('Vagrant.configure') == 0) {
+                  break;
+                }
+              }
+
+              if (i >= lines.length) {
+                boxLog('Could not find configuration inside Vagrantfile');
+                return;
+              }
+
+              newValue += '    config.vm.define "homestead" do |homestead|\n';
+              newValue += '        homestead.vm.box = "laravel/homestead"\n';
+              for (i = i + 1; i < lines.length; i++) {
+                newValue += '    ' + lines[i].replace('config.', 'homestead.') + '\n';
+              }
+              newValue += 'end\n';
+
+              fs.writeFile(vagrantfile, newValue, 'utf-8', function(err) {
                 if (err) {
                   boxLog(err);
                 } else {
@@ -425,7 +462,7 @@ Homestead.prototype.detect = function () {
     });
   });
 
-  return this.detected.promise;
+  return self.detected.promise;
 };
 
 /**
@@ -437,7 +474,7 @@ Homestead.prototype.loadConfig = function () {
   var self = this;
 
   // VM must first be detected so we have the home path
-  this.detected.promise.then(function () {
+  self.detected.promise.then(function () {
     self.config = new GenericSettings(self.home + '/config.yml');
 
     self.config.load(function (error, data) {
@@ -450,7 +487,7 @@ Homestead.prototype.loadConfig = function () {
     });
   });
 
-  return this.loadedConfig.promise;
+  return self.loadedConfig.promise;
 };
 
 /**
@@ -462,7 +499,7 @@ Homestead.prototype.checkState = function () {
   var self = this;
 
   // VM must first be detected so we have its ID
-  this.detected.promise.then(function () {
+  self.detected.promise.then(function () {
     var spawn = require('child_process').spawn;
     var child = spawn('vagrant', ['status', self.id]);
 
@@ -488,7 +525,7 @@ Homestead.prototype.checkState = function () {
     });
   });
 
-  return this.checkedState.promise;
+  return self.checkedState.promise;
 };
 
 /**
@@ -527,14 +564,16 @@ Homestead.prototype.bindEvents = function () {
  * @return {[type]} [description]
  */
 Homestead.prototype.stateChange = function () {
+  var self = this;
+
   // sanity check
-  if (this.state < 0) {
-    this.state = 0;
+  if (self.state < 0) {
+    self.state = 0;
   }
 
   // check running state
   var status_el = $('#nav-' + this.unique_name + ' .title .homestead-status')
-  if (this.state & this._RUNNING) {
+  if (self.state & self._RUNNING) {
     $('.homestead-start').addClass('disabled');
     $('.homestead-stop').removeClass('disabled');
 
@@ -561,9 +600,16 @@ Homestead.prototype.stateChange = function () {
 Homestead.prototype.start = function () {
   var self = this;
 
-  if (!(this.state & this._RUNNING)) {
-    this.control(this.CONTROL_STOP).then(function () {
-      console.log('started');
+  if ((self.state & self._RUNNING)) {
+    self.control(self.CONTROL_STOP).then(function () {
+      console.log('restarting');
+
+      self.state += self._RUNNING;
+      self.stateChange();
+    });
+  } else {
+    self.control(self.CONTROL_START).then(function() {
+      console.log('starting');
 
       self.state += self._RUNNING;
       self.stateChange();
@@ -579,8 +625,8 @@ Homestead.prototype.start = function () {
 Homestead.prototype.stop = function () {
   var self = this;
 
-  if (this.state & this._RUNNING) {
-    this.control(this.CONTROL_STOP).then(function () {
+  if (self.state & self._RUNNING) {
+    self.control(self.CONTROL_STOP).then(function () {
       console.log('stopped');
 
       self.state -= self._RUNNING;
@@ -597,8 +643,8 @@ Homestead.prototype.stop = function () {
 Homestead.prototype.provision = function () {
   var self = this;
 
-  if (this.state & this._NEEDS_REPROVISION) {
-    this.control(this.CONTROL_PROVISION).then(function () {
+  if (self.state & self._NEEDS_REPROVISION) {
+    self.control(self.CONTROL_PROVISION).then(function () {
       console.log('finished provisioning');
 
       self.state -= self._NEEDS_REPROVISION;
@@ -611,49 +657,67 @@ Homestead.prototype.provision = function () {
 
 Homestead.prototype.control = function (action) {
   var deferred = Q.defer();
-  this.controlChain = this.controlChain.then(deferred.promise);
-
-  var creator_uid_path = this.home + '/.vagrant/machines/homestead/virtualbox/creator_uid';
-  var creator_uid = fs.readFileSync(creator_uid_path);
-
-  fs.writeFileSync(creator_uid_path, '0');
-
   var self = this;
+  self.controlChain = self.controlChain.then(deferred.promise);
+
+  //var creator_uid_path = this.home + '/.vagrant/machines/homestead/virtualbox/creator_uid';
+  //var creator_uid = fs.readFileSync(creator_uid_path);
+
+  //fs.writeFileSync(creator_uid_path, '0');
+
   var title = '';
   var cmd = '';
 
   switch (action) {
-    case this.CONTROL_START:
+    case self.CONTROL_START:
       cmd = 'up'
       title = 'Starting VM';
       break;
 
-    case this.CONTROL_STOP:
+    case self.CONTROL_STOP:
       cmd = 'halt';
       title = 'Stopping VM';
       break;
 
-    case this.CONTROL_PROVISION:
+    case self.CONTROL_PROVISION:
       cmd = 'provision';
       title = 'Re-provisioning VM';
       break;
 
-    case this.CONTROL_RELOAD:
+    case self.CONTROL_RELOAD:
       cmd = 'reload';
       title = 'Reloading VM';
       break;
   }
 
-  var spawn = require('child_process').spawn;
-  var child = spawn('sudo', ['-S', 'vagrant', cmd, this.id]);
+  var startDir = process.cwd();
+  try {
+    process.chdir(self.home);
+  } catch (err) {
+    console.log('chdir: ' + err);
+    deferred.reject('Encountered a problem while running "vagrant ' + cmd + ' ' + self.id + '".');
+    return;
+  }
 
-  console.log('running: vagrant ' + cmd + ' ' + this.id);
+  var spawn = require('child_process').spawn;
+  var child = spawn('sudo', ['-S', 'vagrant', cmd, 'homestead']);
+  //var child = spawn('sudo', ['-S', 'vagrant', cmd, self.id]);
+
+  //console.log('running: vagrant ' + cmd + ' ' + self.id);
+  console.log('running: vagrant ' + cmd + ' ' + 'homestead');
 
   var dialog = load_mod('components/dialog').create(title);
   dialog.setChildProcess(child);
   dialog.logProcess(child);
 
   child.on('exit', function (exitCode) {
+    try {
+      process.chdir(startDir);
+    } catch (err) {
+      console.log('chdir: ' + err);
+      return;
+    }
+
     if (exitCode !== 0) {
       deferred.reject('Encountered problem while running "vagrant ' + cmd + ' ' + self.id + '".');
       return;
@@ -688,12 +752,14 @@ Homestead.prototype.control = function (action) {
 
         break;
     }
+
+    dialog.hide();
   });
 
 
   // fs.writeFileSync(creator_uid_path, creator_uid);
 
-  return this.controlChain;
+  return self.controlChain;
 };
 
 module.exports = Homestead;
