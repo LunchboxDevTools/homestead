@@ -701,16 +701,18 @@ Homestead.prototype.control = function (action) {
     process.chdir(self.home);
   } catch (err) {
     console.log('chdir: ' + err);
-    deferred.reject('Encountered a problem while running "vagrant ' + cmd + ' ' + self.id + '".');
+    deferred.reject('Encountered a problem while running "vagrant ' + cmd + ' ' + self.name + '".');
     return;
   }
 
   var spawn = require('child_process').spawn;
-  var child = spawn('sudo', ['-S', 'vagrant', cmd, 'homestead']);
-  //var child = spawn('sudo', ['-S', 'vagrant', cmd, self.id]);
+  var opts = ['-S', 'vagrant', cmd];
+  if (self.name) {
+    opts.push(self.name);
+  }
+  var child = spawn('sudo', opts);
 
-  //console.log('running: vagrant ' + cmd + ' ' + self.id);
-  console.log('running: vagrant ' + cmd + ' ' + 'homestead');
+  console.log('running: vagrant ' + cmd + ' ' + self.name);
 
   var dialog = load_mod('components/dialog').create(title);
   dialog.setChildProcess(child);
@@ -725,7 +727,7 @@ Homestead.prototype.control = function (action) {
     }
 
     if (exitCode !== 0) {
-      deferred.reject('Encountered problem while running "vagrant ' + cmd + ' ' + self.id + '".');
+      deferred.reject('Encountered problem while running "vagrant ' + cmd + ' ' + self.name + '".');
       return;
     }
 
