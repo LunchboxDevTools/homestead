@@ -194,8 +194,8 @@ Homestead.prototype.detect = function () {
   child.stderr.on('data', write);
 
   var self = this;
-  child.on('exit', function (exitCode) {
-    if (exitCode !== 0) {
+  child.on('exit', function (exit_code) {
+    if (exit_code !== 0) {
       self.detected.reject('Encountered problem while running "vagrant global-status".');
       return;
     }
@@ -222,12 +222,12 @@ Homestead.prototype.detect = function () {
 
     var os = require('os');
     var homedir = os.homedir();
-    var boxLog = function(message) {
+    var box_log = function(message) {
       $('#homestead_plugin_dialog_log').append(message + '\n');
     };
 
-    var resolveSetup = function(home_path) {
-      boxLog('Done setting up Homestead');
+    var resolve_setup = function(home_path) {
+      box_log('Done setting up Homestead');
       self.home = home_path;
       self.detected.resolve();
       setTimeout(function() {
@@ -235,26 +235,26 @@ Homestead.prototype.detect = function () {
       }, 1000);
     };
 
-    var cloneHomestead = function() {
-      boxLog('Cloning Homestead');
+    var clone_homestead = function() {
+      box_log('Cloning Homestead');
       var clone_path = window.lunchbox.user_data_path + '/homestead';
       var git_path = 'https://github.com/laravel/homestead.git';
 
-      boxLog('Cloning Homestead from ' + git_path);
+      box_log('Cloning Homestead from ' + git_path);
 
       var child = spawn('git', ['clone', git_path, clone_path]);
 
       child.on('exit', function (exit_code) {
 
         if (exit_code) {
-          boxLog('Could not clone Homestead Git repository to ' + clone_path);
+          box_log('Could not clone Homestead Git repository to ' + clone_path);
           return;
         }
 
-        boxLog('Cloned Homestead to ' + clone_path);
-        var initHomestead = function() {
+        box_log('Cloned Homestead to ' + clone_path);
+        var init_homestead = function() {
           var rimraf = require('rimraf');
-          var startDir = process.cwd();
+          var start_dir = process.cwd();
           try {
             // have to change to the new directory to run init script
             process.chdir(clone_path);
@@ -267,7 +267,7 @@ Homestead.prototype.detect = function () {
           // to confirm overwrite if the files already exist
           rimraf(homedir + '/.homestead', function(err) {
             if (err) {
-              boxLog(err);
+              box_log(err);
               return;
             }
 
@@ -281,98 +281,98 @@ Homestead.prototype.detect = function () {
               command = 'bash';
               args = ['init.sh'];
             }
-            var initProcess = spawn(command, args);
-            initProcess.on('exit', function(exit_code) {
+            var init_process = spawn(command, args);
+            init_process.on('exit', function(exit_code) {
               if (exit_code) {
-                boxLog('Could not initialize Homestead');
+                box_log('Could not initialize Homestead');
               } else {
-                setupConfigFile();
+                setup_config_file();
               }
 
               try {
                 // change back to the Lunchbox app's directory
-                process.chdir(startDir);
+                process.chdir(start_dir);
               } catch (err) {
                 console.log('chdir: ' + err);
                 return;
               }
             });
 
-            initProcess.stdout.on('data', function (data) {
-              boxLog('stdout: ' + data);
+            init_process.stdout.on('data', function (data) {
+              box_log('stdout: ' + data);
             });
 
-            initProcess.stderr.on('data', function (data) {
-              boxLog('stderr: ' + data);
+            init_process.stderr.on('data', function (data) {
+              box_log('stderr: ' + data);
             });
           });
         };
 
-        var setupConfigFile = function() {
-          var configfile = homedir + '/.homestead/Homestead.yaml';
-          boxLog('Setting up config file');
-          fs.readFile(configfile, 'utf-8', function(err, data) {
+        var setup_config_file = function() {
+          var config_file = homedir + '/.homestead/Homestead.yaml';
+          box_log('Setting up config file');
+          fs.readFile(config_file, 'utf-8', function(err, data) {
             if (err) {
-              boxLog(err);
+              box_log(err);
             } else {
               // surround the mapped path with quotes in case of spaces
-              var newValue = data.replace('~/Code', "'" + clone_path + "'");
-              fs.writeFile(configfile, newValue, 'utf-8', function(err) {
+              var new_value = data.replace('~/Code', "'" + clone_path + "'");
+              fs.writeFile(config_file, new_value, 'utf-8', function(err) {
                 if (err) {
-                  boxLog(err);
+                  box_log(err);
                 } else {
-                  setupVagrantfile();
+                  setup_vagrantfile();
                 }
               });
             }
           });
         };
 
-        var setupVagrantfile = function() {
+        var setup_vagrantfile = function() {
           var vagrantfile = clone_path + '/Vagrantfile';
-          boxLog('Setting up Vagrantfile');
+          box_log('Setting up Vagrantfile');
           fs.readFile(vagrantfile, 'utf-8', function(err, data) {
             if (err) {
-              boxLog(err);
+              box_log(err);
             } else {
               var lines = data.trim().split('\n');
-              var newValue = '';
+              var new_value = '';
               var i = 0;
               for (; i < lines.length; i++) {
-                newValue += lines[i] + '\n';
+                new_value += lines[i] + '\n';
                 if (lines[i].indexOf('Vagrant.configure') == 0) {
                   break;
                 }
               }
 
               if (i >= lines.length) {
-                boxLog('Could not find configuration inside Vagrantfile');
+                box_log('Could not find configuration inside Vagrantfile');
                 return;
               }
 
-              newValue += '    config.vm.define "homestead" do |homestead|\n';
-              newValue += '        homestead.vm.box = "laravel/homestead"\n';
+              new_value += '    config.vm.define "homestead" do |homestead|\n';
+              new_value += '        homestead.vm.box = "laravel/homestead"\n';
               for (i = i + 1; i < lines.length; i++) {
-                newValue += '    ' + lines[i].replace('config.', 'homestead.') + '\n';
+                new_value += '    ' + lines[i].replace('config.', 'homestead.') + '\n';
               }
-              newValue += 'end\n';
+              new_value += 'end\n';
 
-              fs.writeFile(vagrantfile, newValue, 'utf-8', function(err) {
+              fs.writeFile(vagrantfile, new_value, 'utf-8', function(err) {
                 if (err) {
-                  boxLog(err);
+                  box_log(err);
                 } else {
-                  resolveSetup(clone_path);
+                  resolve_setup(clone_path);
                 }
               });
             }
           });
         };
 
-        initHomestead();
+        init_homestead();
       });
     };
 
-    var setHomesteadLocation = function() {
+    var set_homestead_location = function() {
       bootbox.prompt("Please enter the full path to your Homestead directory.", function(path) {
         if (path === null) {
           return;
@@ -382,48 +382,48 @@ Homestead.prototype.detect = function () {
           path = path.slice(0, -1);
         }
 
-        var checkPath = function() {
-          boxLog('Checking if ' + path + ' is a valid directory');
+        var check_path = function() {
+          box_log('Checking if ' + path + ' is a valid directory');
           fs.lstat(path, function(err, stats) {
             if (err) {
-              boxLog(err);
+              box_log(err);
             } else if (!stats.isDirectory()) {
-              boxLog(path + ' is not a valid directory');
+              box_log(path + ' is not a valid directory');
             } else {
-              checkVagrantfile();
+              check_vagrantfile();
             }
           });
         }; // checkPath
 
         // make sure Vagrantfile exists
-        var checkVagrantfile = function() {
-          boxLog('Checking if Vagrantfile exists');
+        var check_vagrantfile = function() {
+          box_log('Checking if Vagrantfile exists');
           fs.lstat(path + '/Vagrantfile', function(err, stats) {
             if (err) {
-              boxLog(err);
+              box_log(err);
             } else if (!stats.isFile()) {
-              boxLog('Vagrantfile does not exist at ' + path);
+              box_log('Vagrantfile does not exist at ' + path);
             } else {
-              checkConfigFile();
+              check_config_file();
             }
           });
         }; // checkVagrantfile
 
         // make sure the config file is already set up
-        var checkConfigFile = function() {
-          boxLog('Checking if configuration file exists');
+        var check_config_file = function() {
+          box_log('Checking if configuration file exists');
           fs.lstat(homedir + '/.homestead/Homestead.yaml', function(err, stats) {
             if (err) {
-              boxLog(err);
+              box_log(err);
             } else if (!stats.isFile()) {
-              boxLog('Could not locate configuration file at ' + homedir + '/.homestead');
+              box_log('Could not locate configuration file at ' + homedir + '/.homestead');
             } else {
-              resolveSetup(path);
+              resolve_setup(path);
             }
           });
         }; // checkConfigFile
 
-        checkPath();
+        check_path();
       }); // bootbox.prompt
     };
 
@@ -455,10 +455,10 @@ Homestead.prototype.detect = function () {
     });
 
     $('#btnClone').on('click', function() {
-      cloneHomestead();
+      clone_homestead();
     });
     $('#btnSetLoc').on('click', function() {
-      setHomesteadLocation();
+      set_homestead_location();
     });
   });
 
