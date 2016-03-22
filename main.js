@@ -226,6 +226,12 @@ Homestead.prototype.detect = function () {
       }
     }
 
+    if (self.plugin.settings.vm_path) {
+      self.home = self.plugin.settings.vm_path;
+      self.detected.resolve();
+      return;
+    }
+
     var os = require('os');
     var homedir = os.homedir();
     var box_log = function(message) {
@@ -235,10 +241,14 @@ Homestead.prototype.detect = function () {
     var resolve_setup = function(home_path) {
       box_log('Done setting up Homestead');
       self.home = home_path;
-      self.detected.resolve();
-      setTimeout(function() {
-        box.modal('hide'); // only close if everything succeeds
-      }, 1000);
+      self.plugin.settings.vm_path = home_path;
+
+      window.lunchbox.settings.save(function() {
+        self.detected.resolve();
+        setTimeout(function() {
+          box.modal('hide'); // only close if everything succeeds
+        }, 1000);
+      });
     };
 
     var clone_homestead = function() {
