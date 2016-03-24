@@ -8,26 +8,30 @@
         </div>
         <div class="panel-body">
           <div class="form-group">
+            <label for="vagrant_path">Virtual machine directory location</label>
+            <input class="form-control" name="vagrant_path" placeholder="">
+          </div>
+          <div class="form-group">
             <label for="vagrant_ip">Virtual machine IP address</label>
-            <input class="form-control" name="vagrant_ip" placeholder="192.168.1.88">
+            <input class="form-control" name="vagrant_ip" placeholder="192.168.10.10">
           </div>
           <div class="form-group">
             <label for="vagrant_hostname">Default hostname</label>
-            <input class="form-control" name="vagrant_hostname" placeholder="homestead.dev">
+            <input class="form-control" name="vagrant_hostname" placeholder="homestead.app">
           </div>
           <div class="form-group">
             <label for="vagrant_synced_folders">Local files</label>
-            <input class="form-control" name="vagrant_synced_folders" placeholder="~/Sites/homestead">
+            <input class="form-control" name="vagrant_synced_folders" placeholder="~/Code">
           </div>
           <div class="form-group">
             <label for="vagrant_memory">VM memory</label>
             <div class="input-group">
-            <input class="form-control" name="vagrant_memory" placeholder="1024"><div class="input-group-addon">MBs</div>
+            <input class="form-control" name="vagrant_memory" placeholder="2048"><div class="input-group-addon">MBs</div>
             </div>
           </div>
           <div class="form-group">
             <label for="vagrant_cpus">VM CPUs</label>
-            <input class="form-control" name="vagrant_cpus" placeholder="2">
+            <input class="form-control" name="vagrant_cpus" placeholder="1">
           </div>
           <label>File sync method</label><br>
           <div class="btn-group" data-toggle="buttons" id="filesync_method">

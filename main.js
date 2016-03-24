@@ -226,8 +226,8 @@ Homestead.prototype.detect = function () {
       }
     }
 
-    if (self.plugin.settings.vm_path) {
-      self.home = self.plugin.settings.vm_path;
+    if (self.plugin.settings.vagrant_path) {
+      self.home = self.plugin.settings.vagrant_path;
       self.detected.resolve();
       return;
     }
@@ -241,7 +241,7 @@ Homestead.prototype.detect = function () {
     var resolve_setup = function(home_path) {
       box_log('Done setting up Homestead');
       self.home = home_path;
-      self.plugin.settings.vm_path = home_path;
+      self.plugin.settings.vagrant_path = home_path;
 
       window.lunchbox.settings.save(function() {
         self.detected.resolve();
@@ -255,6 +255,7 @@ Homestead.prototype.detect = function () {
       box_log('Cloning Homestead');
       var clone_path = window.lunchbox.user_data_path + '/homestead';
       var git_path = 'https://github.com/laravel/homestead.git';
+      var config_path = homedir + '/.homestead';
 
       box_log('Cloning Homestead from ' + git_path);
 
@@ -281,7 +282,7 @@ Homestead.prototype.detect = function () {
 
           // have to clear out ~/.homestead because init script prompts
           // to confirm overwrite if the files already exist
-          rimraf(homedir + '/.homestead', function(err) {
+          rimraf(config_path, function(err) {
             if (err) {
               box_log(err);
               return;
@@ -325,21 +326,14 @@ Homestead.prototype.detect = function () {
         };
 
         var setup_config_file = function() {
-          var config_file = homedir + '/.homestead/Homestead.yaml';
+          var config_file = config_path + '/Homestead.yaml';
           box_log('Setting up config file');
           fs.readFile(config_file, 'utf-8', function(err, data) {
             if (err) {
               box_log(err);
             } else {
-              // surround the mapped path with quotes in case of spaces
-              var new_value = data.replace('~/Code', "'" + clone_path + "'");
-              fs.writeFile(config_file, new_value, 'utf-8', function(err) {
-                if (err) {
-                  box_log(err);
-                } else {
-                  setup_vagrantfile();
-                }
-              });
+              self.plugin.settings.config_file = config_file;
+              setup_vagrantfile();
             }
           });
         };
@@ -434,6 +428,7 @@ Homestead.prototype.detect = function () {
             } else if (!stats.isFile()) {
               box_log('Could not locate configuration file at ' + homedir + '/.homestead');
             } else {
+              self.plugin.settings.config_file = homedir + '/.homestead/Homestead.yaml';
               resolve_setup(path);
             }
           });
@@ -491,7 +486,7 @@ Homestead.prototype.loadConfig = function () {
 
   // VM must first be detected so we have the home path
   self.detected.promise.then(function () {
-    self.config = new GenericSettings(self.home + '/config.yml');
+    self.config = new GenericSettings(self.plugin.settings.config_file);
 
     self.config.load(function (error, data) {
       if (error !== null) {

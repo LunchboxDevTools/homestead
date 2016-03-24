@@ -5,25 +5,28 @@ $(document).ready(function () {
   var vm_config = homestead.config;
 
   // populate settings vm form
+  var vagrant_path = $("input[name=vagrant_path");
+  vagrant_path.val(homestead.plugin.settings.vagrant_path);
+
   var vagrant_ip = $("input[name=vagrant_ip]");
-  vagrant_ip.val(vm_config.vagrant_ip);
+  vagrant_ip.val(vm_config.ip);
 
   var vagrant_hostname = $("input[name=vagrant_hostname]");
-  vagrant_hostname.val(vm_config.vagrant_hostname);
+  vagrant_hostname.val(vm_config.sites[0].map);
 
   var vagrant_synced_folders = $("input[name=vagrant_synced_folders]");
-  vagrant_synced_folders.val(vm_config.vagrant_synced_folders[0].local_path);
+  vagrant_synced_folders.val(vm_config.folders[0].map);
   
   var vagrant_memory = $("input[name=vagrant_memory]");
-  vagrant_memory.val(vm_config.vagrant_memory);
+  vagrant_memory.val(vm_config.memory);
   
   var vagrant_cpus = $("input[name=vagrant_cpus]");
-  vagrant_cpus.val(vm_config.vagrant_cpus);
+  vagrant_cpus.val(vm_config.cpus);
 
   // setup filesync method widget & activate selected item
-  var filesync_wrap = $('#filesync_method')
+  var filesync_wrap = $('#filesync_method');
   if (filesync_wrap) {
-    var filesync = vm_config.vagrant_synced_folders[0].type;
+    var filesync = vm_config.folders[0].type;
     if (!filesync) {
       filesync = 'default';
     }
@@ -74,11 +77,12 @@ $(document).ready(function () {
     e.preventDefault();
 
     // set general vagrant info
-    vm_config.vagrant_ip = vagrant_ip.val();
-    vm_config.vagrant_hostname = vagrant_hostname.val();
-    vm_config.vagrant_synced_folders[0].local_path = vagrant_synced_folders.val();
-    vm_config.vagrant_memory = vagrant_memory.val();
-    vm_config.vagrant_cpus = vagrant_cpus.val();
+    homestead.plugin.settings.vagrant_path = vagrant_path.val();
+    vm_config.ip = vagrant_ip.val();
+    vm_config.sites[0].map = vagrant_hostname.val();
+    vm_config.folders[0].map = vagrant_synced_folders.val();
+    vm_config.memory = vagrant_memory.val();
+    vm_config.cpus = vagrant_cpus.val();
 
     // set synced folders
     var synced_folders = $('input[name=filesync_method]:checked').val();
@@ -86,7 +90,7 @@ $(document).ready(function () {
       synced_folders = '';
     }
 
-    vm_config.vagrant_synced_folders[0].type = synced_folders;
+    vm_config.folders[0].type = synced_folders;
 
     // set installed extras
     vm_config.installed_extras = [];
@@ -97,6 +101,7 @@ $(document).ready(function () {
 
     // save
     vm_config.save(save_callback);
+    window.lunchbox.settings.save();
   });
 
   $('#reset_settings').click(function (e) {
