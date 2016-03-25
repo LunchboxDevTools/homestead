@@ -611,16 +611,15 @@ Homestead.prototype.stateChange = function () {
 Homestead.prototype.start = function () {
   var self = this;
 
-  if ((self.state & self._RUNNING)) {
-    self.control(self.CONTROL_STOP).then(function () {
-      console.log('restarting');
+  if (self.state & self._RUNNING) {
+    self.control(self.CONTROL_RELOAD).then(function () {
+      console.log('restarted');
 
-      self.state += self._RUNNING;
       self.stateChange();
     });
   } else {
     self.control(self.CONTROL_START).then(function() {
-      console.log('starting');
+      console.log('started');
 
       self.state += self._RUNNING;
       self.stateChange();
@@ -732,6 +731,10 @@ Homestead.prototype.control = function (action) {
     }
 
     if (exitCode !== 0) {
+      if (action == self.CONTROL_START) {
+        self.state -= self._RUNNING;
+        self.stateChange();
+      }
       deferred.reject('Encountered problem while running "vagrant ' + cmd + ' ' + self.name + '".');
       return;
     }
