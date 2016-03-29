@@ -54,7 +54,7 @@ var Homestead = function (plugin, dialog) {
 
   // do we need to run provision?
   if (this.plugin.settings.needs_provision) {
-    this.state += this._NEEDS_PROVISION;
+    this.state |= this._NEEDS_PROVISION;
   }
 
   // promises for later use
@@ -222,7 +222,7 @@ Homestead.prototype.detect = function () {
         }
         self.home = self.home.trim();
 
-        self.state += parts[3] == 'running' ? self._RUNNING : 0;
+        self.state |= (parts[3] == 'running' ? self._RUNNING : 0);
         self.stateChange();
 
         self.detected.resolve();
@@ -534,7 +534,7 @@ Homestead.prototype.checkState = function () {
         return;
       }
 
-      self.state += (stdout.indexOf('running') !== -1) ? self._RUNNING : 0;
+      self.state |= ((stdout.indexOf('running') !== -1) ? self._RUNNING : 0);
       self.stateChange();
 
       self.checkedState.resolve();
@@ -626,7 +626,7 @@ Homestead.prototype.start = function () {
     self.control(self.CONTROL_START).then(function() {
       console.log('started');
 
-      self.state += self._RUNNING;
+      self.state |= self._RUNNING;
       self.stateChange();
     });
   }
@@ -644,7 +644,7 @@ Homestead.prototype.stop = function () {
     self.control(self.CONTROL_STOP).then(function () {
       console.log('stopped');
 
-      self.state -= self._RUNNING;
+      self.state ^= self._RUNNING;
       self.stateChange();
     });
   }
@@ -662,7 +662,7 @@ Homestead.prototype.provision = function () {
     self.control(self.CONTROL_PROVISION).then(function () {
       console.log('finished provisioning');
 
-      self.state -= self._NEEDS_PROVISION;
+      self.state ^= self._NEEDS_PROVISION;
       self.stateChange();
 
       self.hideProvisionNotice();
@@ -737,7 +737,7 @@ Homestead.prototype.control = function (action) {
 
     if (exitCode !== 0) {
       if (action == self.CONTROL_START) {
-        self.state -= self._RUNNING;
+        self.state ^= self._RUNNING;
         self.stateChange();
       }
       deferred.reject('Encountered problem while running "vagrant ' + cmd + ' ' + self.name + '".');
