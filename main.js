@@ -121,6 +121,11 @@ Homestead.prototype.setProvision = function (status, callback) {
   callback = callback || function () {};
 
   this.plugin.settings.needs_provision = status;
+  if (status) {
+    this.state |= this._NEEDS_PROVISION;
+  } else {
+    this.state ^= this._NEEDS_PROVISION;
+  }
 
   window.lunchbox.settings.save(callback);
 };
@@ -653,11 +658,11 @@ Homestead.prototype.stop = function () {
 Homestead.prototype.provision = function () {
   var self = this;
 
-  if (self.state & self._NEEDS_REPROVISION) {
+  if (self.state & self._NEEDS_PROVISION) {
     self.control(self.CONTROL_PROVISION).then(function () {
       console.log('finished provisioning');
 
-      self.state -= self._NEEDS_REPROVISION;
+      self.state -= self._NEEDS_PROVISION;
       self.stateChange();
 
       self.hideProvisionNotice();
