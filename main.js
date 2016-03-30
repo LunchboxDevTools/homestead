@@ -232,9 +232,16 @@ Homestead.prototype.detect = function () {
     }
 
     if (self.plugin.settings.vagrant_path) {
-      self.home = self.plugin.settings.vagrant_path;
-      self.detected.resolve();
-      return;
+      try {
+        var vagrant_path_stats = fs.lstatSync(self.plugin.settings.vagrant_path);
+        if (vagrant_path_stats.isDirectory()) {
+          self.home = self.plugin.settings.vagrant_path;
+          self.detected.resolve();
+          return;
+        }
+      } catch (e) {
+        write(e);
+      }
     }
 
     var os = require('os');
@@ -337,8 +344,15 @@ Homestead.prototype.detect = function () {
             if (err) {
               box_log(err);
             } else {
-              self.plugin.settings.config_file = config_file;
-              setup_vagrantfile();
+              var new_value = data.replace('/home/vagrant/Code/Laravel/public', '/home/vagrant/Code/public');
+              fs.writeFile(config_file, new_value, 'utf-8', function(err) {
+                if (err) {
+                  box_log(err);
+                } else {
+                  self.plugin.settings.config_file = config_file;
+                  setup_vagrantfile();
+                }
+              });
             }
           });
         };
@@ -616,13 +630,7 @@ Homestead.prototype.stateChange = function () {
 Homestead.prototype.start = function () {
   var self = this;
 
-  if (self.state & self._RUNNING) {
-    self.control(self.CONTROL_RELOAD).then(function () {
-      console.log('restarted');
-
-      self.stateChange();
-    });
-  } else {
+  if (!(self.state & self._RUNNING)) {
     self.control(self.CONTROL_START).then(function() {
       console.log('started');
 
@@ -659,7 +667,12 @@ Homestead.prototype.provision = function () {
   var self = this;
 
   if (self.state & self._NEEDS_PROVISION) {
-    self.control(self.CONTROL_PROVISION).then(function () {
+    var control = self.CONTROL_PROVISION;
+    if (!(self.state & self._RUNNING)) {
+      self.setProvision(false);
+      control = self.CONTROL_START;
+    }
+    self.control(control).then(function () {
       console.log('finished provisioning');
 
       self.state ^= self._NEEDS_PROVISION;
