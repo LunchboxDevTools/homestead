@@ -45,8 +45,8 @@ $(document).ready(function () {
 
     // We don't want to include these default entries.
     var exclude = ['{{ homestead_domain }}', 'adminer.homestead.dev', 'xhprof.homestead.dev', 'pimpmylog.homestead.dev'];
-    for (var x in vm_config.apache_vhosts) {
-      var servername = vm_config.apache_vhosts[x].servername;
+    for (var x in vm_config.sites) {
+      var servername = vm_config.sites[x].map;
 
       if (exclude.indexOf(servername) !== -1) {
         continue;
@@ -103,7 +103,7 @@ $(document).ready(function () {
   function createSite (name, git_url, composer, webroot) {
     // create the directory
     var fs = require('fs');
-    var dir = vm_config.vagrant_synced_folders[0].local_path + '/' + name;
+    var dir = vm_config.folders[0].map + '/' + name;
 
     if (git_url) {
       cloneGIT(dir, git_url).then(function () {
@@ -120,17 +120,16 @@ $(document).ready(function () {
 
     // Create the apache vhost
     var vhost = new Object();
-    vhost.servername = name + "." + vm_config.vagrant_hostname;
-    vhost.projectroot = "/var/www/" + name;
-    vhost.documentroot = "/var/www/" + name + "/" + webroot;
-    vm_config.apache_vhosts.push(vhost);
+    vhost.map = name + "." + vm_config.sites[0].map;
+    vhost.to = vm_config.sites[0].to + "/" + webroot;
+    vm_config.sites.push(vhost);
 
     // Create the database
-    var db = new Object();
-    db.name = name;
-    db.encoding = "utf8";
-    db.collation = "utf8_general_ci";
-    vm_config.mysql_databases.push(db);
+    //var db = new Object();
+    //db.name = name;
+    //db.encoding = "utf8";
+    //db.collation = "utf8_general_ci";
+    vm_config.databases.push(name);
 
     vm_config.save(function (error) {
       if (error !== null) {
@@ -220,7 +219,7 @@ $(document).ready(function () {
     //TODO: Prompt to ask how much of the record to delete
     var deleteSettings = {
       "removeDirectory": true,
-      "removeApacheVhost": true,
+      "removeSite": true,
       "removeDatabase": true
     };
 
@@ -228,7 +227,7 @@ $(document).ready(function () {
       title: "Delete site: " + projectName,
       message: 'This will delete:'
         + '<ul>'
-        + '<li>apache vhost</li>'
+        + '<li>site</li>'
         + '<li>database</li>'
         + '<li>site directory and files</li>'
         + '</ul>',
@@ -264,12 +263,12 @@ $(document).ready(function () {
       //TODO:
     }
 
-    if (deleteSettings.removeApacheVhost) {
-      for (var x in vm_config.apache_vhosts) {
-        var servername = vm_config.apache_vhosts[x].servername;
+    if (deleteSettings.removeSite) {
+      for (var x in vm_config.sites) {
+        var servername = vm_config.sites[x].map;
         var name = servername.split(".")[0];
         if (name == projectName) {
-          vm_config.apache_vhosts.splice(x, 1);
+          vm_config.sites.splice(x, 1);
         }
       }
     }
