@@ -7,7 +7,7 @@ $(document).ready(function () {
   console.log(homestead);
   var vm_config = homestead.config;
 
-  settings = window.lunchbox.settings;
+  var settings = window.lunchbox.settings;
 
   // handle adding new site
   $('#homestead-sites .add-site').click(function (e) {
@@ -103,7 +103,7 @@ $(document).ready(function () {
   function createSite (name, git_url, composer, webroot) {
     // create the directory
     var fs = require('fs');
-    var dir = vm_config.folders[0].map + '/' + name;
+    var dir = vm_config.folders[0].map + '/' + webroot;
 
     if (git_url) {
       cloneGIT(dir, git_url).then(function () {
@@ -113,16 +113,19 @@ $(document).ready(function () {
       });
     }
     else {
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-      }
+      // TODO nodejs really doesn't like ~ home path
+      // for now, just assume the user is smart enough to point
+      // to an exising path, or to at least create it later
+      //if (!fs.existsSync(dir)) {
+      //  fs.mkdirSync(dir);
+      //}
     }
 
     // Create the apache vhost
-    var vhost = new Object();
-    vhost.map = name + "." + vm_config.sites[0].map;
-    vhost.to = vm_config.sites[0].to + "/" + webroot;
-    vm_config.sites.push(vhost);
+    var site = new Object();
+    site.map = name + "." + vm_config.sites[0].map;
+    site.to = vm_config.folders[0].to + '/' + webroot;
+    vm_config.sites.push(site);
 
     // Create the database
     //var db = new Object();
@@ -137,7 +140,9 @@ $(document).ready(function () {
         return;
       }
 
-      reloadCurrentView();
+      reloadCurrentView(function() {
+        homestead.showProvisionNotice();
+      });
     });
   }
   
@@ -283,7 +288,9 @@ $(document).ready(function () {
         return;
       }
 
-      reloadCurrentView();
+      reloadCurrentView(function() {
+        homestead.showProvisionNotice();
+      });
     });
   }
 });

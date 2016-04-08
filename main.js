@@ -124,7 +124,9 @@ Homestead.prototype.setProvision = function (status, callback) {
   if (status) {
     this.state |= this._NEEDS_PROVISION;
   } else {
-    this.state ^= this._NEEDS_PROVISION;
+    if (this.state & this._NEEDS_PROVISION) {
+      this.state ^= this._NEEDS_PROVISION;
+    }
   }
 
   window.lunchbox.settings.save(callback);
